@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { Navbar } from "./NavBar";
@@ -30,6 +30,15 @@ export function RegisterForm() {
         },
         profile_picture: null
     });
+
+    useEffect(() => {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("userData");
+        sessionStorage.removeItem("accessToken");
+        sessionStorage.removeItem("refreshToken");
+        sessionStorage.removeItem("userData");
+    }, []);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;

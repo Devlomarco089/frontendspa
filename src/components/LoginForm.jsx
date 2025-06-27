@@ -3,6 +3,7 @@ import { login } from "../api/auth.api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { Navbar } from "./NavBar";
+import { useUser } from "../context/UserContext";
 
 export function LoginForm() {
     const [formData, setFormData] = useState({
@@ -14,12 +15,13 @@ export function LoginForm() {
     const navigate = useNavigate();
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
+    const { setUser } = useUser();
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const { name, value, type, checked } = e.target;
         setFormData({
             ...formData,
-            [name]: value,
+            [name]: type === 'checkbox' ? checked : value,
         });
     };
 
@@ -36,7 +38,14 @@ export function LoginForm() {
             storage.setItem("refreshToken", data.refresh);
             window.dispatchEvent(new Event("storage"));
             toast.success("¡Inicio de sesión exitoso!");
-            navigate("/Servicios");
+            // Obtener el tipo de usuario desde userData
+            const userData = JSON.parse(localStorage.getItem("userData"));
+            setUser(userData); // Actualiza el contexto global inmediatamente
+            if (userData && userData.tipo_usuario === "profesional") {
+                navigate("/profesional/panel");
+            } else {
+                navigate("/Servicios");
+            }
         } catch (error) {
             toast.error("Error al iniciar sesión: " + error.message);
         }
@@ -62,9 +71,9 @@ export function LoginForm() {
                             value={formData.email}
                             onChange={handleChange}
                             required
-                            className="w-full px-4 py-2 rounded-lg bg-pink-50 text-gray-700 
-                            border border-pink-200 focus:outline-none focus:ring-2 
-                            focus:ring-pink-400 focus:border-transparent 
+                            className="w-full px-4 py-2 rounded-lg bg-pink-50 text-gray-700 \
+                            border border-pink-200 focus:outline-none focus:ring-2 \
+                            focus:ring-pink-400 focus:border-transparent \
                             placeholder-pink-300"
                         />
                     </div>
@@ -79,9 +88,9 @@ export function LoginForm() {
                             value={formData.password}
                             onChange={handleChange}
                             required
-                            className="w-full px-4 py-2 rounded-lg bg-pink-50 text-gray-700 
-                            border border-pink-200 focus:outline-none focus:ring-2 
-                            focus:ring-pink-400 focus:border-transparent 
+                            className="w-full px-4 py-2 rounded-lg bg-pink-50 text-gray-700 \
+                            border border-pink-200 focus:outline-none focus:ring-2 \
+                            focus:ring-pink-400 focus:border-transparent \
                             placeholder-pink-300"
                         />
                     </div>
@@ -92,7 +101,7 @@ export function LoginForm() {
                             name="rememberMe"
                             checked={formData.rememberMe}
                             onChange={handleChange}
-                            className="w-5 h-5 text-pink-400 bg-pink-50 
+                            className="w-5 h-5 text-pink-400 bg-pink-50 \
                             border-pink-200 rounded focus:ring-2 focus:ring-pink-400"
                         />
                         <label htmlFor="rememberMe" className="text-sm text-gray-700">
@@ -101,14 +110,12 @@ export function LoginForm() {
                     </div>
                     <button
                         type="submit"
-                        className="w-full py-3 bg-green-500 text-white font-bold rounded-lg 
-                        hover:bg-green-600 transition-all duration-300 
+                        className="w-full py-3 bg-green-500 text-white font-bold rounded-lg \
+                        hover:bg-green-600 transition-all duration-300 \
                         transform hover:scale-105 shadow-lg hover:shadow-xl"
                     >
                         Iniciar Sesión
                     </button>
-
-                    {/* Add this new div for the registration link */}
                     <div className="text-center mt-4">
                         <p className="text-gray-700">
                             ¿No tienes cuenta?{" "}
@@ -121,6 +128,14 @@ export function LoginForm() {
                         </p>
                     </div>
                 </form>
+                <div className="text-center mt-6">
+                    <button
+                        className="py-2 px-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all duration-300"
+                        onClick={() => window.location.href = 'http://localhost:8000/admin/'}
+                    >
+                        ¿Eres admin? Ir al panel de Django
+                    </button>
+                </div>
             </div>
         </div>
         </>

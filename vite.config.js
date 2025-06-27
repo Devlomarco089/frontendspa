@@ -7,9 +7,19 @@ export default defineConfig({
   server: {
     historyApiFallback: true,
     proxy: {
-      '/api': 'http://localhost:8000',  // Para desarrollo local
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+        cookieDomainRewrite: 'localhost',
+      },
+      '/admin': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+        cookieDomainRewrite: 'localhost',
+      },
     },
-    
   },
   build: {
     outDir: 'dist',  // Carpeta de salida para Django

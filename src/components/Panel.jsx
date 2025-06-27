@@ -7,11 +7,12 @@ export function Panel() {
   const location = useLocation();
   const accessToken = localStorage.getItem("accessToken");
   const [ordenes, setOrdenes] = useState([]);
+  const [turnos, setTurnos] = useState([]);
 
   useEffect(() => {
     const fetchOrdenes = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/api/ordenes/", {
+        const response = await axios.get("http://localhost:8000/api/ordenes-usuario/", {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -22,7 +23,21 @@ export function Panel() {
       }
     };
 
+    const fetchTurnos = async () => {
+      try {
+        const response = await axios.get("http://localhost:8000/api/turnos/", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        setTurnos(response.data);
+      } catch (error) {
+        console.error("Error al obtener los turnos:", error);
+      }
+    };
+
     fetchOrdenes();
+    fetchTurnos();
   }, []);
 
   const renderOrden = (orden) => (
@@ -39,6 +54,15 @@ export function Panel() {
           <p>Hora: {turno.horario.hora}</p>
         </div>
       ))}
+    </div>
+  );
+
+  const renderTurno = (turno) => (
+    <div key={turno.id} className="p-4 bg-pink-50 rounded-lg shadow-md mb-4">
+      <h3 className="font-bold">Turno #{turno.id}</h3>
+      <p>Servicio: {turno.servicio_nombre || (turno.servicio && turno.servicio.nombre)}</p>
+      <p>Fecha: {turno.fecha || (turno.horario && turno.horario.fecha)}</p>
+      <p>Hora: {turno.hora || (turno.horario && turno.horario.hora)}</p>
     </div>
   );
 
@@ -75,7 +99,13 @@ export function Panel() {
           <h3 className="text-2xl font-semibold mb-4 text-gray-800">
             Mis Turnos
           </h3>
-          {/* Aquí puedes agregar el código para mostrar los turnos del usuario */}
+          {turnos.length === 0 ? (
+            <p className="text-gray-600">
+              No tienes turnos reservados.
+            </p>
+          ) : (
+            turnos.map(renderTurno)
+          )}
         </div>
       </div>
     </div>

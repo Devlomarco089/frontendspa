@@ -8,6 +8,7 @@ import Modal from "../components/Modal"; // Importa el componente Modal
 import ReservaModal from "../components/ReservaModal"; // Importa el componente ReservaModal
 import ModalInfoServicio from "../components/ModalInfoServicio"; // Importa el componente ModalInfoServicio
 import ModalPago from "../components/ModalPago"; // Importa el componente ModalPago
+import { useCart } from "../context/CartContext";
 
 export function ServicesPage() {
   const [services, setServices] = useState([]); // Estado para los servicios
@@ -21,6 +22,7 @@ export function ServicesPage() {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false); // Estado para controlar el modal de información
   const [selectedServiceInfo, setSelectedServiceInfo] = useState(null); // Servicio seleccionado para información
   const [isPagoModalOpen, setIsPagoModalOpen] = useState(false); // Estado para controlar el modal de pago
+  const { addItemToCart } = useCart();
 
   // Verifica si el usuario está autenticado al cargar el componente
   useEffect(() => {
@@ -91,6 +93,17 @@ export function ServicesPage() {
     console.log("Pago en efectivo seleccionado");
     setIsPagoModalOpen(false);
     // Manejar la lógica para pagos en efectivo
+  };
+
+  // Agregar servicio al carrito usando el backend
+  const handleAddToCarrito = (service) => {
+    if (!isAuthenticated) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    addItemToCart(service.id);
+    setSuccessMessage("Servicio agregado al carrito para su posterior pago.");
+    setTimeout(() => setSuccessMessage(""), 2000);
   };
 
   return (
@@ -211,7 +224,7 @@ export function ServicesPage() {
               hover:shadow-xl transition-all duration-300 hover:scale-105 border border-pink-100"
             >
               <img
-                src={`https://web-production-5825.up.railway.app/${service.imagen}`} // Asegúrate de usar la URL completa
+                src={`http://localhost:8000/${service.imagen}`} // Asegúrate de usar la URL completa
                 alt={service.titulo}
                 className="w-full h-48 object-cover"
               />
@@ -227,7 +240,7 @@ export function ServicesPage() {
                       hover:bg-green-600 transition-all duration-300 transform hover:scale-105 
                       shadow-lg hover:shadow-xl"
                   >
-                    Reservar
+                    Elegir Horario
                   </button>
                   <button
                     onClick={() => handleViewInfo(service)}
@@ -276,6 +289,13 @@ export function ServicesPage() {
         onMercadoPago={handleMercadoPago}
         onEfectivo={handleEfectivo}
       />
+
+      {/* Mensaje de éxito al agregar al carrito */}
+      {successMessage && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-200 text-green-800 px-6 py-3 rounded shadow-lg z-50">
+          {successMessage}
+        </div>
+      )}
     </div>
   );
 }

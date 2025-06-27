@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = "https://web-production-5825.up.railway.app/api/turnos/";
+const API_URL = "http://localhost:8000/api/turnos/";
 
 export async function getTurnos() {
     const token = localStorage.getItem('accessToken'); 

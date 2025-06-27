@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getCartItems, addToCart } from '../api/apiService';
+import { getCartItems, addToCart, removeFromCart as apiRemoveFromCart, clearCart as apiClearCart } from '../api/apiService';
 import { toast } from 'react-hot-toast';
 
 const CartContext = createContext();
@@ -18,45 +18,49 @@ export function CartProvider({ children }) {
             const items = await getCartItems();
             setCartItems(items);
         } catch (error) {
-            console.error('Error loading cart items:', error);
-            toast.error('Error al cargar el carrito');
+            setCartItems([]); // Si hay error, deja el carrito vacío
         } finally {
             setIsLoading(false);
         }
     };
 
-    const addItemToCart = async (serviceId, note = "") => {
+    // Nuevo: permite pasar horarioId y profesionalId
+    const addItemToCart = async (serviceId, note = "", horarioId = null, profesionalId = null) => {
         try {
-            const response = await addToCart({
-                servicio: serviceId,
-                nota: note
-            });
+            const payload = { servicio: serviceId, nota: note };
+            if (horarioId) payload.horario = horarioId;
+            if (profesionalId) payload.profesional = profesionalId;
+            const response = await addToCart(payload);
             setCartItems(prev => [...prev, response]);
             toast.success('Servicio agregado al carrito');
         } catch (error) {
-            console.error('Error adding item to cart:', error);
             toast.error('Error al agregar al carrito');
         }
     };
 
     const removeFromCart = async (itemId) => {
         try {
-            // Filter out the removed item locally
+            await apiRemoveFromCart(itemId);
             setCartItems(prev => prev.filter(item => item.id !== itemId));
             toast.success('Servicio eliminado del carrito');
         } catch (error) {
-            console.error('Error removing item from cart:', error);
             toast.error('Error al eliminar del carrito');
         }
     };
 
-    const clearCart = () => {
-        setCartItems([]);
+    const clearCart = async () => {
+        try {
+            await apiClearCart();
+            setCartItems([]);
+            toast.success('Carrito vaciado');
+        } catch (error) {
+            toast.error('Error al vaciar el carrito');
+        }
     };
 
     const getTotal = () => {
         return cartItems.reduce((total, item) => {
-            return total + parseFloat(item.servicio_detalle.precio);
+            return total + parseFloat(item.servicio_detalle?.precio || 0);
         }, 0).toFixed(2);
     };
 

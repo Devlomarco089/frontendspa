@@ -4,27 +4,23 @@ const API_URL = 'http://localhost:8000/api';
 
 
 /**
- * Realiza una solicitud POST al endpoint de login para obtener los tokens JWT.
- * @param {Object} credentials - Credenciales del usuario (username y password).
- * @returns {Object} - Respuesta con los tokens de acceso y refresco.
+ * Realiza una solicitud POST al endpoint de login personalizado para obtener los tokens JWT y datos de usuario.
+ * @param {Object} credentials - Credenciales del usuario (email y password).
+ * @returns {Object} - Respuesta con los tokens y datos de usuario.
  * @throws {Error} - Error si las credenciales son inválidas o la solicitud falla.
  */
-
-
-
 export async function login(credentials) {
     try {
-        const response = await axios.post(`${API_URL}/token/`, {
+        const response = await axios.post(`${API_URL}/login/`, {
             email: credentials.email,
             password: credentials.password
         });
-        
         if (response.data.access) {
             localStorage.setItem('accessToken', response.data.access);
             localStorage.setItem('refreshToken', response.data.refresh);
-            // Obtener datos del usuario
-            const userResponse = await getUserProfile();
-            localStorage.setItem('userData', JSON.stringify(userResponse.data));
+            if (response.data.user) {
+                localStorage.setItem('userData', JSON.stringify(response.data.user));
+            }
         }
         return response.data;
     } catch (error) {
@@ -52,7 +48,7 @@ export const register = async (userData) => {
 
 export const getUserProfile = async () => {
   const token = localStorage.getItem('accessToken');
-  return axios.get(`${API_URL}/user/profile/`, {
+  return axios.get(`${API_URL}/perfil-usuario/`, {
     headers: { Authorization: `Bearer ${token}` }
   });
 };

@@ -24,9 +24,11 @@ const InteractiveMenu = () => {
   // Manejar el cierre de sesión
   const handleLogout = () => {
     localStorage.removeItem("accessToken"); // Elimina el token del localStorage
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userData");
     setIsAuthenticated(false); // Actualiza el estado
     setIsOpen(false); // Cierra el menú
-    window.location.href = "/"; // Redirige a la página principal
+    window.location.href = "/login"; // Redirige directamente al login
   };
 
   return (

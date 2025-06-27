@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useCart } from "../context/CartContext";
 
 const ReservaModal = ({
   isOpen,
@@ -9,10 +10,13 @@ const ReservaModal = ({
   onSuccess,
   accessToken,
 }) => {
-  const [formData, setFormData] = useState({ fecha: "", horario: "" });
+  const [formData, setFormData] = useState({ fecha: "", horario: "", horarioId: "" });
   const [horarios, setHorarios] = useState([]);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const { addItemToCart } = useCart();
+  const [profesionales, setProfesionales] = useState([]);
+  const [profesionalSeleccionado, setProfesionalSeleccionado] = useState("");
 
   // Cargar horarios disponibles cuando se selecciona una fecha
   useEffect(() => {
@@ -20,7 +24,7 @@ const ReservaModal = ({
       if (serviceId && formData.fecha) {
         try {
           const response = await axios.get(
-            "https://web-production-5825.up.railway.app/api/horarios-disponibles/", // Agregado /api/ al path
+            "http://localhost:8000/api/horarios-disponibles/",
             {
               params: {
                 servicio: serviceId,
@@ -41,22 +45,19 @@ const ReservaModal = ({
             setErrorMessage("No se encontraron horarios disponibles");
           }
         } catch (error) {
-          console.error("Error al cargar los horarios disponibles:", error);
           setHorarios([]);
-          
-          if (error.response?.status === 404) {
-            setErrorMessage("No se encontró el servicio de horarios disponibles");
-          } else if (error.response?.status === 401) {
-            setErrorMessage("Sesión expirada. Por favor, inicia sesión nuevamente");
-          } else {
-            setErrorMessage("Error al cargar los horarios. Por favor, intenta nuevamente");
-          }
+          setErrorMessage("Error al cargar los horarios. Por favor, intenta nuevamente");
         }
       }
     };
-
     loadHorarios();
   }, [serviceId, formData.fecha, accessToken]);
+
+  // Adaptar selección de horario y profesional
+  const handleHorarioProfesional = (hora, profesionalId, horarioId) => {
+    setFormData((prevData) => ({ ...prevData, horario: hora, profesional: profesionalId, horarioId }));
+    setProfesionalSeleccionado(profesionalId);
+  };
 
   // Manejar el cambio en los campos del formulario
   const handleChange = (e) => {
@@ -64,42 +65,23 @@ const ReservaModal = ({
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 
-  // Manejar la reserva de turno
-  const handleSubmit = async (e) => {
+  // Agregar al carrito con servicio, horario y profesional
+  const handleAddToCart = async (e) => {
     e.preventDefault();
-
-    if (!formData.horario) {
-      setErrorMessage("Por favor, selecciona un horario.");
+    if (!formData.horarioId || !formData.profesional) {
+      setErrorMessage("Por favor, selecciona un horario y profesional.");
       return;
     }
-
     try {
-      // Crear orden de turno
-      const ordenData = {
-        servicios: [{
-          horario: formData.horario,
-          servicio: serviceId
-        }],
-        metodo_pago: "web", // O esperar a que el usuario seleccione
-      };
-
-      const response = await axios.post(
-        "http://localhost:8000/api/ordenes/",
-        ordenData,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
-
-      setSuccessMessage("¡Turno reservado con éxito!");
+      await addItemToCart(serviceId, "", formData.horarioId, formData.profesional); // nota vacía, horarioId, profesional
+      setSuccessMessage("Servicio, horario y profesional agregados al carrito.");
       setErrorMessage("");
-      onSuccess(response.data); // Pasar la orden creada
-      onClose();
-    } catch (error) {
-      console.error("Error al reservar el turno:", error);
-      setErrorMessage("Hubo un error al reservar el turno. Inténtalo nuevamente.");
+      setTimeout(() => {
+        setSuccessMessage("");
+        onClose();
+      }, 1200);
+    } catch (err) {
+      setErrorMessage("Error al agregar al carrito. Intenta nuevamente.");
     }
   };
 
@@ -109,8 +91,8 @@ const ReservaModal = ({
     <div
       className="fixed inset-0 flex items-center justify-center z-50"
       style={{
-        backdropFilter: "blur(8px)", // Aplica el desenfoque al fondo
-        backgroundColor: "rgba(255, 255, 255, 0.1)", // Fondo semitransparente claro
+        backdropFilter: "blur(8px)",
+        backgroundColor: "rgba(255, 255, 255, 0.1)",
       }}
     >
       <div className="bg-white text-gray-700 rounded-lg shadow-lg p-8 w-[600px]">
@@ -119,7 +101,6 @@ const ReservaModal = ({
         </h2>
         {successMessage && <p className="text-green-500 mb-4">{successMessage}</p>}
         {errorMessage && <p className="text-red-500 mb-4">{errorMessage}</p>}
-
         {/* Resumen del servicio */}
         {serviceDetails && (
           <div className="mb-6">
@@ -135,8 +116,7 @@ const ReservaModal = ({
             </p>
           </div>
         )}
-
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleAddToCart}>
           <div className="mb-4">
             <label htmlFor="fecha" className="block text-lg font-bold mb-2">
               Fecha:
@@ -151,24 +131,23 @@ const ReservaModal = ({
               required
             />
           </div>
-
-          {/* Horarios disponibles */}
+          {/* Horarios y profesionales disponibles juntos */}
           <div className="mb-4">
             <h3 className="text-lg font-bold mb-2">Horarios Disponibles:</h3>
             {horarios.length > 0 ? (
-              <div className="grid grid-cols-2 gap-4">
-                {horarios.map((horario) => (
+              <div className="grid grid-cols-2 gap-4 max-h-64 overflow-y-auto">
+                {horarios.map((h, idx) => (
                   <button
-                    key={horario.id}
+                    key={idx}
                     type="button"
-                    onClick={() => setFormData((prevData) => ({ ...prevData, horario: horario.id }))}
+                    onClick={() => handleHorarioProfesional(h.hora, h.profesional_id, h.horario_id)}
                     className={`p-3 rounded-lg text-center font-bold ${
-                      formData.horario === horario.id
+                      formData.horarioId === h.horario_id && formData.profesional === h.profesional_id
                         ? "bg-[#A27B5C] text-[#DCD7C9]"
                         : "bg-[#3F4E4F] text-[#DCD7C9]"
                     } hover:bg-[#4A5759] transition duration-300`}
                   >
-                    {horario.hora}
+                    {h.hora} - {h.profesional_nombre}
                   </button>
                 ))}
               </div>
@@ -176,15 +155,16 @@ const ReservaModal = ({
               <p className="text-center text-red-500">No hay horarios disponibles.</p>
             )}
           </div>
-
           <button
             type="submit"
-            className="w-full px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition duration-300"
+            className="w-full px-4 py-2 bg-yellow-400 text-white font-bold rounded-lg shadow-md hover:bg-yellow-500 transition duration-300"
+            disabled={!formData.horarioId || !profesionalSeleccionado}
           >
-            Confirmar Reserva
+            Agregar al Carrito
           </button>
           <button
             onClick={onClose}
+            type="button"
             className="mt-4 w-full px-4 py-2 bg-pink-200 text-pink-600 font-bold rounded-lg shadow-md hover:bg-pink-300 transition duration-300"
           >
             Cancelar

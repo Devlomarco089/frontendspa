@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Navbar } from "../components/NavBar";
 import { getTurnos } from "../api/turno.api";
+import axios from "axios";
 
 const Panel = () => {
   const [activeTab, setActiveTab] = useState("misReservas"); // Estado para manejar la pestaña activa
   const [turnos, setTurnos] = useState([]); // Estado para almacenar los turnos
+  const [ordenes, setOrdenes] = useState([]); // Estado para almacenar las órdenes
   const [loading, setLoading] = useState(true); // Estado para manejar el estado de carga
   const [error, setError] = useState(null); // Estado para manejar errores
 
@@ -23,6 +25,21 @@ const Panel = () => {
 
     fetchTurnos();
   }, []); // Se ejecuta una vez al montar el componente
+
+  useEffect(() => {
+    const fetchOrdenes = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        const response = await axios.get('http://localhost:8000/api/ordenes-usuario/', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setOrdenes(response.data);
+      } catch (err) {
+        // No mostrar error si no hay órdenes
+      }
+    };
+    if (activeTab === "historial") fetchOrdenes();
+  }, [activeTab]);
 
   return (
     <>
@@ -104,8 +121,33 @@ const Panel = () => {
 
             {activeTab === "historial" && (
               <div>
-                <h2 className="text-2xl font-bold mb-4">Historial</h2>
-                <p className="text-center text-red-500">No hay historial disponible.</p>
+                <h2 className="text-2xl font-bold mb-4">Historial de Pagos</h2>
+                {ordenes.length > 0 ? (
+                  <ul className="space-y-6">
+                    {ordenes.map((orden) => (
+                      <li key={orden.id} className="p-4 bg-pink-50 rounded-lg shadow-md">
+                        <p className="font-bold text-lg mb-2">Orden #{orden.id}</p>
+                        <p><b>Estado:</b> {orden.estado}</p>
+                        <p><b>Pagado:</b> {orden.pagado ? 'Sí' : 'No'}</p>
+                        <p><b>Método de pago:</b> {orden.metodo_pago || '-'}</p>
+                        <p><b>Total:</b> ${orden.total}</p>
+                        <p><b>Fecha de creación:</b> {new Date(orden.fecha_creacion).toLocaleString()}</p>
+                        <div className="mt-2">
+                          <b>Turnos:</b>
+                          <ul className="ml-4 list-disc">
+                            {orden.turnos && orden.turnos.map((turno) => (
+                              <li key={turno.id}>
+                                <b>Servicio:</b> {turno.servicio_nombre || '-'} | <b>Fecha:</b> {turno.fecha} | <b>Hora:</b> {turno.hora} | <b>Profesional:</b> {turno.profesional_nombre || '-'}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-center text-red-500">No hay historial disponible.</p>
+                )}
               </div>
             )}
 

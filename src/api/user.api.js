@@ -10,7 +10,7 @@ export async function registerUser(formData) {
             password: formData.password,
         };
 
-        const response = await axios.post('https://web-production-5825.up.railway.app/api/register/', payload, {
+        const response = await axios.post('http://localhost:8000/api/register/', payload, {
             headers: {
                 'Content-Type': 'application/json',
             },

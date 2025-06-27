@@ -1,5 +1,5 @@
 import {BrowserRouter, Routes,Route, Navigate} from 'react-router-dom'
-
+import ChatBot from "./components/chatbot";
 import { Toaster } from 'react-hot-toast';
 import {Inicio} from './components/Inicio'
 import {ServicesPage} from './pages/ServicesPage'
@@ -14,6 +14,7 @@ import Panel from './pages/Panel';
 import { AuthCorreo } from './pages/AuthCorreo';
 import { CartProvider } from './context/CartContext';
 import ProfesionalPanel from './components/ProfesionalPanel';
+import PanelPago from './components/PanelPago';
 
 function App() {
   return (
@@ -33,10 +34,13 @@ function App() {
     <Route path="/Panel" element={<Panel />} />
     <Route path="/verify-email" element={<AuthCorreo />} />
     <Route path="/profesional/panel" element={<ProfesionalPanel />} />
+    <Route path="/panel-pago" element={<PanelPago />} />
    </Routes>
    <Footer/>
    </BrowserRouter>
+   <ChatBot />
    </CartProvider>
+   
   )
 }
 export default App;

@@ -3,21 +3,30 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { FaPrint, FaCalendar, FaClock } from 'react-icons/fa';
+import { useUser } from '../context/UserContext';
+import dayjs from 'dayjs';
 
 export function ProfesionalPanel() {
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
     const navigate = useNavigate();
     const accessToken = localStorage.getItem('accessToken');
+    const { isProfesional } = useUser();
 
     useEffect(() => {
-        loadAppointments();
-    }, []);
+        // Si no es profesional, redirigir al login
+        if (!isProfesional) {
+            navigate('/login');
+            return;
+        }
+        loadAppointments(selectedDate);
+    }, [isProfesional, selectedDate]);
 
-    const loadAppointments = async () => {
+    const loadAppointments = async (date) => {
         try {
             const response = await axios.get(
-                'https://web-production-5825.up.railway.app/api/profesional/appointments/',
+                `http://localhost:8000/api/profesional/appointments/?fecha=${date}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${accessToken}`
@@ -64,14 +73,22 @@ export function ProfesionalPanel() {
                         <h1 className="text-2xl font-bold text-[#DCD7C9]">
                             Panel de Turnos
                         </h1>
-                        <button
-                            onClick={handlePrint}
-                            className="flex items-center px-4 py-2 bg-[#A27B5C] text-[#DCD7C9] rounded-lg
-                                hover:bg-[#4A5759] transition-all duration-300"
-                        >
-                            <FaPrint className="mr-2" />
-                            Imprimir Turnos
-                        </button>
+                        <div className="flex gap-4 items-center">
+                            <input
+                                type="date"
+                                value={selectedDate}
+                                onChange={e => setSelectedDate(e.target.value)}
+                                className="p-2 rounded bg-[#DCD7C9] text-[#2C3639] font-bold"
+                            />
+                            <button
+                                onClick={handlePrint}
+                                className="flex items-center px-4 py-2 bg-[#A27B5C] text-[#DCD7C9] rounded-lg
+                                    hover:bg-[#4A5759] transition-all duration-300"
+                            >
+                                <FaPrint className="mr-2" />
+                                Imprimir Turnos
+                            </button>
+                        </div>
                     </div>
 
                     <div className="overflow-x-auto">
@@ -82,44 +99,39 @@ export function ProfesionalPanel() {
                                     <th className="px-6 py-3 text-left">Servicio</th>
                                     <th className="px-6 py-3 text-left">Fecha</th>
                                     <th className="px-6 py-3 text-left">Hora</th>
-                                    <th className="px-6 py-3 text-left">Estado</th>
                                 </tr>
                             </thead>
                             <tbody className="text-[#DCD7C9]">
-                                {appointments.map((appointment) => (
+                                {appointments.length > 0 ? appointments.map((appointment) => (
                                     <tr 
                                         key={appointment.id}
                                         className="border-b border-[#4A5759] hover:bg-[#2C3639]"
                                     >
                                         <td className="px-6 py-4">
-                                            {appointment.client_name}
+                                            {appointment.cliente_nombre ||
+                                                (appointment.orden && appointment.orden.usuario ?
+                                                    `${appointment.orden.usuario.first_name} ${appointment.orden.usuario.last_name}` :
+                                                    appointment.cliente || "-")}
                                         </td>
                                         <td className="px-6 py-4">
-                                            {appointment.service_name}
+                                            {appointment.servicio_nombre || appointment.servicio?.nombre || "-"}
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center">
                                                 <FaCalendar className="mr-2 text-[#A27B5C]" />
-                                                {new Date(appointment.date).toLocaleDateString()}
+                                                {appointment.fecha || appointment.horario?.fecha || "-"}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center">
                                                 <FaClock className="mr-2 text-[#A27B5C]" />
-                                                {appointment.time}
+                                                {appointment.hora || appointment.horario?.hora || "-"}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`px-3 py-1 rounded-full text-sm ${
-                                                appointment.status === 'pending' 
-                                                    ? 'bg-yellow-500' 
-                                                    : 'bg-green-500'
-                                            } text-white`}>
-                                                {appointment.status === 'pending' ? 'Pendiente' : 'Confirmado'}
-                                            </span>
-                                        </td>
                                     </tr>
-                                ))}
+                                )) : (
+                                    <tr><td colSpan={4} className="text-center py-4">No hay turnos para este día.</td></tr>
+                                )}
                             </tbody>
                         </table>
                     </div>

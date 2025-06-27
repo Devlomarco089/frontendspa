@@ -30,7 +30,7 @@ export function Cart({ isOpen, onClose }) {
     }, [isOpen]);
 
     const handleProceedToPayment = () => {
-        navigate('/reserva');
+        navigate('/panel-pago'); // Redirige al panel de pago
         onClose();
     };
 
@@ -90,13 +90,14 @@ export function Cart({ isOpen, onClose }) {
                             <p className="text-[#DCD7C9] text-xl font-bold">
                                 Total: ${getTotal()}
                             </p>
-                            <button
-                                onClick={handleProceedToPayment}
-                                className="w-full mt-4 py-3 bg-[#A27B5C] text-[#DCD7C9] rounded-lg
-                                    hover:bg-[#4A5759] transition-all duration-300"
-                            >
-                                Proceder al Pago
-                            </button>
+                            {cartItems.length > 0 && (
+                                <button
+                                    onClick={handleProceedToPayment}
+                                    className="w-full mt-6 py-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition-all duration-300"
+                                >
+                                    Proceder al Pago
+                                </button>
+                            )}
                         </div>
                     </>
                 )}
